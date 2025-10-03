@@ -64,10 +64,13 @@ RUN bash -c '. "$NVM_DIR/nvm.sh" \
     && pnpm --version \
     && bun --version'
 
-# 暴露 SSH 端口（已在基础镜像中设置，这里保留以示明确）
+# 复制自定义 entrypoint 脚本
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+# 暴露 SSH 端口
 EXPOSE 22
 
-# 使用原镜像的入口点和 CMD
-# ENTRYPOINT ["entry_point.sh"]
-# CMD ["/usr/sbin/sshd", "-D", "-e"]
-# 基础镜像已经设置了这些，无需重复
+# 使用自定义 entrypoint，这样 sshd 会自动启动，同时可以执行用户传入的命令
+ENTRYPOINT ["entrypoint.sh"]
+CMD []
