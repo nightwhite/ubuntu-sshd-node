@@ -35,7 +35,8 @@ fi
 # 执行用户传入的命令（如果有的话）
 if [ $# -gt 0 ]; then
     echo "Executing command: $@"
-    exec "$@"
+    # 不使用 exec，让命令在前台运行，这样 sshd 继续在后台运行
+    "$@"
 else
     # 如果没有传入命令，保持容器运行
     echo "No command specified, keeping container alive..."
