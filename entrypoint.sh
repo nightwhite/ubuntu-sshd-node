@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e
 
+# 设置默认值
+TZ=${TZ:-Asia/Tokyo}
+ROOT_PASSWORD=${ROOT_PASSWORD:-root}
+
 # 设置时区
 ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime
 
