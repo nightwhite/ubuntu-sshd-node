@@ -56,13 +56,13 @@ RUN echo '# Load .bashrc if it exists' >> /root/.profile \
 # 设置默认 shell 为 bash
 RUN chsh -s /bin/bash root
 
-# 验证安装
-RUN . "$NVM_DIR/nvm.sh" \
+# 验证安装（使用 bash 避免 shopt 警告）
+RUN bash -c '. "$NVM_DIR/nvm.sh" \
     && . "$HOME/.bashrc" \
     && node --version \
     && npm --version \
     && pnpm --version \
-    && bun --version
+    && bun --version'
 
 # 暴露 SSH 端口（已在基础镜像中设置，这里保留以示明确）
 EXPOSE 22
