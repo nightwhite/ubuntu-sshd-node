@@ -14,23 +14,23 @@
 ### 从 GitHub Container Registry 拉取镜像
 
 ```bash
-docker pull ghcr.io/YOUR_USERNAME/ubuntu-sshd-node:latest
+docker pull ghcr.io/nightwhite/ubuntu-sshd-node:latest
 ```
 
 ### 运行容器
 
 ```bash
 # 基本运行（默认密码: root）
-docker run -d -p 2222:22 ghcr.io/YOUR_USERNAME/ubuntu-sshd-node:latest
+docker run -d -p 2222:22 ghcr.io/nightwhite/ubuntu-sshd-node:latest
 
 # 挂载工作目录
-docker run -d -p 2222:22 -v $(pwd):/workspace ghcr.io/YOUR_USERNAME/ubuntu-sshd-node:latest
+docker run -d -p 2222:22 -v $(pwd):/workspace ghcr.io/nightwhite/ubuntu-sshd-node:latest
 
 # 自定义 root 密码和时区
 docker run -d -p 2222:22 \
   -e ROOT_PASSWORD=your_password \
-  -e TZ=America/New_York \
-  ghcr.io/YOUR_USERNAME/ubuntu-sshd-node:latest
+  -e TZ=Asia/Shanghai \
+  ghcr.io/nightwhite/ubuntu-sshd-node:latest
 ```
 
 ### SSH 连接
@@ -45,7 +45,7 @@ ssh root@localhost -p 2222
 
 ```bash
 # 克隆仓库
-git clone https://github.com/YOUR_USERNAME/ubuntu-sshd-node.git
+git clone https://github.com/nightwhite/ubuntu-sshd-node.git
 cd ubuntu-sshd-node
 
 # 构建镜像
@@ -85,7 +85,7 @@ nvm list
 ## 环境变量
 
 - `ROOT_PASSWORD`: SSH 登录密码 (默认: root)
-- `TZ`: 时区设置 (默认: Asia/Tokyo)
+- `TZ`: 时区设置 (默认: UTC)
 
 ## 许可证
 
