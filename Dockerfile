@@ -1,76 +1,76 @@
-FROM takeyamajp/ubuntu-sshd:ubuntu22.04
+FROM ubuntu:22.04
+LABEL maintainer="Night"
 
 # 设置环境变量
 ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Asia/Shanghai
+ENV ROOT_PASSWORD=root
 ENV NVM_DIR="/root/.nvm"
 ENV NODE_VERSION="22.20.0"
 ENV PATH="$NVM_DIR/versions/node/v$NODE_VERSION/bin:$PATH"
+ENV BUN_INSTALL="/root/.bun"
+ENV PATH="$BUN_INSTALL/bin:$PATH"
 
-# 保持原镜像的时区设置（可以通过环境变量修改）
-# ENV TZ Asia/Tokyo 已在基础镜像中设置
-# ENV ROOT_PASSWORD root 已在基础镜像中设置
-
-# 更新包管理器并安装基础工具
-RUN apt-get update && apt-get install -y \
+# 一次性安装所有系统依赖
+RUN apt update && apt install -y \
+    # 时区和基础工具
+    tzdata \
+    # SSH 服务
+    openssh-server \
+    # 开发工具
     curl \
     unzip \
     wget \
     git \
     build-essential \
+    # 清理
+    && mkdir /run/sshd \
+    # 配置 SSH
+    && sed -i 's/^#\(PermitRootLogin\) .*/\1 yes/' /etc/ssh/sshd_config \
+    && sed -i 's/^\(UsePAM yes\)/# \1/' /etc/ssh/sshd_config \
+    # 清理缓存
+    && apt clean \
     && rm -rf /var/lib/apt/lists/*
 
-# 安装 NVM
+# 安装 Node.js 开发环境
 RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash \
+    # 安装 Node.js
     && . "$NVM_DIR/nvm.sh" \
     && nvm install $NODE_VERSION \
     && nvm use $NODE_VERSION \
-    && nvm alias default $NODE_VERSION
-
-# 安装 pnpm (使用 npm)
-RUN . "$NVM_DIR/nvm.sh" \
-    && npm install -g pnpm
-
-# 安装 bun (使用官方安装脚本)
-RUN curl -fsSL https://bun.sh/install | bash \
-    && echo 'export BUN_INSTALL="$HOME/.bun"' >> /root/.bashrc \
-    && echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> /root/.bashrc
-
-# 将 bun 添加到 PATH
-ENV BUN_INSTALL="/root/.bun"
-ENV PATH="$BUN_INSTALL/bin:$PATH"
-
-# 确保 NVM 在新的 shell 会话中可用
-# 只配置 .bashrc
-RUN echo 'export NVM_DIR="$HOME/.nvm"' >> /root/.bashrc \
+    && nvm alias default $NODE_VERSION \
+    # 安装 pnpm
+    && npm install -g pnpm \
+    # 安装 bun
+    && curl -fsSL https://bun.sh/install | bash \
+    # 配置环境变量
+    && echo 'export NVM_DIR="$HOME/.nvm"' >> /root/.bashrc \
     && echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /root/.bashrc \
-    && echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /root/.bashrc
-
-# 在 .profile 中加载 .bashrc (标准做法)
-RUN echo '# Load .bashrc if it exists' >> /root/.profile \
+    && echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /root/.bashrc \
+    && echo 'export BUN_INSTALL="$HOME/.bun"' >> /root/.bashrc \
+    && echo 'export PATH="$BUN_INSTALL/bin:$PATH"' >> /root/.bashrc \
+    # 配置 .profile
+    && echo '# Load .bashrc if it exists' >> /root/.profile \
     && echo 'if [ -n "$BASH_VERSION" ]; then' >> /root/.profile \
     && echo '    if [ -f "$HOME/.bashrc" ]; then' >> /root/.profile \
     && echo '        . "$HOME/.bashrc"' >> /root/.profile \
     && echo '    fi' >> /root/.profile \
-    && echo 'fi' >> /root/.profile
+    && echo 'fi' >> /root/.profile \
+    # 设置默认 shell
+    && chsh -s /bin/bash root \
+    # 验证安装
+    && bash -c '. "$NVM_DIR/nvm.sh" && . "$HOME/.bashrc" && node --version && npm --version && pnpm --version && bun --version'
 
-# 设置默认 shell 为 bash
-RUN chsh -s /bin/bash root
+# 创建简化的 entrypoint
+RUN { \
+    echo '#!/bin/bash -eu'; \
+    echo 'ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime'; \
+    echo 'echo "root:${ROOT_PASSWORD}" | chpasswd'; \
+    echo 'exec "$@"'; \
+    } > /usr/local/bin/entry_point.sh; \
+    chmod +x /usr/local/bin/entry_point.sh;
 
-# 验证安装（使用 bash 避免 shopt 警告）
-RUN bash -c '. "$NVM_DIR/nvm.sh" \
-    && . "$HOME/.bashrc" \
-    && node --version \
-    && npm --version \
-    && pnpm --version \
-    && bun --version'
-
-# 复制自定义 entrypoint 脚本
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
-
-# 暴露 SSH 端口
 EXPOSE 22
 
-# 使用自定义 entrypoint，这样 sshd 会自动启动，同时可以执行用户传入的命令
-ENTRYPOINT ["entrypoint.sh"]
-CMD []
+ENTRYPOINT ["entry_point.sh"]
+CMD ["/usr/sbin/sshd", "-D", "-e"]
