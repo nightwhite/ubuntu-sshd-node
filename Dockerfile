@@ -1,9 +1,8 @@
 FROM ubuntu:22.04
-LABEL maintainer="Night"
 
 # 设置环境变量
 ENV DEBIAN_FRONTEND=noninteractive
-ENV TZ=Asia/Shanghai
+ENV TZ=UTC
 ENV ROOT_PASSWORD=root
 ENV NVM_DIR="/root/.nvm"
 ENV NODE_VERSION="22.20.0"

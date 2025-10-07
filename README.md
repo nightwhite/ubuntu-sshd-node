@@ -1,7 +1,5 @@
 # Ubuntu SSH Node.js Development Environment
 
-基于 `takeyamajp/ubuntu-sshd` 构建的 Docker 镜像，预装了 Node.js 开发环境和常用工具。
-
 ## 预装软件
 
 - **基础工具**: curl, unzip, wget, git, build-essential
